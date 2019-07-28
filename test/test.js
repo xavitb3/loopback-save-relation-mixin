@@ -6,25 +6,31 @@ const path = require("path");
 const SIMPLE_APP = path.join(__dirname, "fixtures", "simple-app");
 const app = require(path.join(SIMPLE_APP, "server/server.js"));
 
-describe("the loopback saveRelation mixin", function(tap) {
-  const { ApplicationUser, Profile, Order } = app.models;
+describe("the loopback saveRelation mixin", () => {
+  const { ApplicationUser, Profile, Order, Project, Ticket } = app.models;
   const profile = { name: "user 1" };
   const orders = [{ name: "order 1" }, { name: "order 2" }];
   const projects = [{ name: "project 1" }, { name: "project 2" }];
+  const tickets = [{ name: "ticket 1" }, { name: "ticket 2" }];
 
   beforeEach(() => resetDB());
 
-  describe.skip("given a hasOne relation type", () => {
+  describe("given a hasOne relation type", () => {
     it("should be saved", () =>
-      retrieveUser(user.id).then(userInstance => {
-        expect(userInstance.profile().name).to.equal("user 1");
-      }));
+      createUser({ profile })
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance => {
+          expect(userInstance.profile().name).to.equal("user 1");
+        }));
 
     it("should be updated", () =>
-      ApplicationUser.upsert({
-        ...user.toObject(),
-        profile: { name: "user 1 updated" }
-      })
+      createUser({ profile })
+        .then(userInstance =>
+          ApplicationUser.upsert({
+            ...userInstance.toObject(),
+            profile: { name: "user 1 updated" }
+          })
+        )
         .then(userInstance =>
           Promise.all([retrieveUser(userInstance.id), Profile.find()])
         )
@@ -34,10 +40,13 @@ describe("the loopback saveRelation mixin", function(tap) {
         }));
 
     it("should be deletable", () =>
-      ApplicationUser.upsert({
-        ...user.toObject(),
-        profile: {}
-      })
+      createUser({ profile })
+        .then(userInstance =>
+          ApplicationUser.upsert({
+            ...userInstance.toObject(),
+            profile: {}
+          })
+        )
         .then(userInstance =>
           Promise.all([retrieveUser(userInstance.id), Profile.find()])
         )
@@ -47,144 +56,178 @@ describe("the loopback saveRelation mixin", function(tap) {
         }));
   });
 
-  describe.skip("given a hasMany relation type", () => {
+  describe("given a hasMany relation type", () => {
     it("should be saved", () =>
-      retrieveUser(user.id).then(userInstance => {
-        expect(getOrdersNames(userInstance.orders())).to.deep.equalInAnyOrder(
-          orders
-        );
-      }));
-
-    it("should be updated", () =>
-      retrieveUser(user.id).then(userInstance =>
-        ApplicationUser.upsert({
-          ...userInstance.toObject(),
-          orders: getOrdersWithDifferentNames(
-            userInstance.toObject().orders,
-            "order 1"
-          )
-        })
-          .then(userInstance =>
-            Promise.all([retrieveUser(userInstance.id), Order.find()])
-          )
-          .then(([userInstance, orderInstances]) => {
-            expect(
-              getOrdersNames(userInstance.orders())
-            ).to.deep.equalInAnyOrder([
-              { name: "updated order" },
-              { name: "order 2" }
-            ]);
-            expect(orderInstances.length).to.equal(2);
-          })
-      ));
-
-    it("should be deletable", () =>
-      retrieveUser(user.id).then(userInstance =>
-        ApplicationUser.upsert({
-          ...userInstance.toObject(),
-          orders: removeOrderWithName(userInstance.toObject().orders, "order 1")
-        })
-          .then(userInstance =>
-            Promise.all([retrieveUser(userInstance.id), Order.find()])
-          )
-          .then(([userInstance, orderInstances]) => {
-            expect(
-              getOrdersNames(userInstance.orders())
-            ).to.deep.equalInAnyOrder([{ name: "order 2" }]);
-            expect(orderInstances.length).to.equal(1);
-          })
-      ));
-
-    it("should be updatable and deletable in the same operation", () =>
-      retrieveUser(user.id).then(userInstance =>
-        ApplicationUser.upsert({
-          ...userInstance.toObject(),
-          orders: getOrdersWithDifferentNames(
-            removeOrderWithName(userInstance.toObject().orders, "order 1"),
-            "order 2"
-          )
-        })
-          .then(userInstance =>
-            Promise.all([retrieveUser(userInstance.id), Order.find()])
-          )
-          .then(([userInstance, orderInstances]) => {
-            expect(
-              getOrdersNames(userInstance.orders())
-            ).to.deep.equalInAnyOrder([{ name: "updated order" }]);
-            expect(orderInstances.length).to.equal(1);
-          })
-      ));
-  });
-
-  describe("given a hasManyThrough relation type", () => {
-    it.only("should be saved", () =>
-      createUser({ projects })
+      createUser({ orders })
         .then(userInstance => retrieveUser(userInstance.id))
         .then(userInstance => {
-          expect(
-            getOrdersNames(userInstance.projects())
-          ).to.deep.equalInAnyOrder(projects);
+          expect(getsNames(userInstance.orders())).to.deep.equalInAnyOrder(
+            orders
+          );
         }));
 
     it("should be updated", () =>
-      retrieveUser(user.id).then(userInstance =>
-        ApplicationUser.upsert({
-          ...userInstance.toObject(),
-          orders: getOrdersWithDifferentNames(
-            userInstance.toObject().orders,
-            "order 1"
-          )
-        })
-          .then(userInstance =>
-            Promise.all([retrieveUser(userInstance.id), Order.find()])
-          )
-          .then(([userInstance, orderInstances]) => {
-            expect(
-              getOrdersNames(userInstance.orders())
-            ).to.deep.equalInAnyOrder([
-              { name: "updated order" },
-              { name: "order 2" }
-            ]);
-            expect(orderInstances.length).to.equal(2);
+      createUser({ orders })
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance =>
+          ApplicationUser.upsert({
+            ...userInstance.toObject(),
+            orders: getOrdersWithDifferentNames(
+              userInstance.toObject().orders,
+              "order 1"
+            )
           })
-      ));
+            .then(userInstance =>
+              Promise.all([retrieveUser(userInstance.id), Order.find()])
+            )
+            .then(([userInstance, orderInstances]) => {
+              expect(getsNames(userInstance.orders())).to.deep.equalInAnyOrder([
+                { name: "updated order" },
+                { name: "order 2" }
+              ]);
+              expect(orderInstances.length).to.equal(2);
+            })
+        ));
 
     it("should be deletable", () =>
-      retrieveUser(user.id).then(userInstance =>
-        ApplicationUser.upsert({
-          ...userInstance.toObject(),
-          orders: removeOrderWithName(userInstance.toObject().orders, "order 1")
-        })
-          .then(userInstance =>
-            Promise.all([retrieveUser(userInstance.id), Order.find()])
-          )
-          .then(([userInstance, orderInstances]) => {
-            expect(
-              getOrdersNames(userInstance.orders())
-            ).to.deep.equalInAnyOrder([{ name: "order 2" }]);
-            expect(orderInstances.length).to.equal(1);
+      createUser({ orders })
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance =>
+          ApplicationUser.upsert({
+            ...userInstance.toObject(),
+            orders: removeWithName(userInstance.toObject().orders, "order 1")
           })
-      ));
+            .then(userInstance =>
+              Promise.all([retrieveUser(userInstance.id), Order.find()])
+            )
+            .then(([userInstance, orderInstances]) => {
+              expect(getsNames(userInstance.orders())).to.deep.equalInAnyOrder([
+                { name: "order 2" }
+              ]);
+              expect(orderInstances.length).to.equal(1);
+            })
+        ));
 
     it("should be updatable and deletable in the same operation", () =>
-      retrieveUser(user.id).then(userInstance =>
-        ApplicationUser.upsert({
-          ...userInstance.toObject(),
-          orders: getOrdersWithDifferentNames(
-            removeOrderWithName(userInstance.toObject().orders, "order 1"),
-            "order 2"
-          )
-        })
-          .then(userInstance =>
-            Promise.all([retrieveUser(userInstance.id), Order.find()])
-          )
-          .then(([userInstance, orderInstances]) => {
-            expect(
-              getOrdersNames(userInstance.orders())
-            ).to.deep.equalInAnyOrder([{ name: "updated order" }]);
-            expect(orderInstances.length).to.equal(1);
+      createUser({ orders })
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance =>
+          ApplicationUser.upsert({
+            ...userInstance.toObject(),
+            orders: getOrdersWithDifferentNames(
+              removeWithName(userInstance.toObject().orders, "order 1"),
+              "order 2"
+            )
           })
-      ));
+            .then(userInstance =>
+              Promise.all([retrieveUser(userInstance.id), Order.find()])
+            )
+            .then(([userInstance, orderInstances]) => {
+              expect(getsNames(userInstance.orders())).to.deep.equalInAnyOrder([
+                { name: "updated order" }
+              ]);
+              expect(orderInstances.length).to.equal(1);
+            })
+        ));
+  });
+
+  describe("given a hasManyThrough relation type", () => {
+    it("should create the relatedObjects if they do not exist in the database and save the relations", () =>
+      createUser({ projects: [...projects] })
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance => {
+          expect(getsNames(userInstance.projects())).to.deep.equalInAnyOrder(
+            projects
+          );
+        }));
+
+    it("should be saved if the related objects do exist in the database", () =>
+      Project.create([...projects])
+        .then(projectInstances =>
+          createUser({ projects: [...projectInstances] })
+        )
+        .then(userInstance =>
+          Promise.all([retrieveUser(userInstance.id), Project.find()])
+        )
+        .then(([userInstance, projectInstances]) => {
+          expect(getsNames(userInstance.projects())).to.deep.equalInAnyOrder(
+            projects
+          );
+          expect(projectInstances.length).to.equal(2);
+        }));
+
+    it("should be deletable", () =>
+      Project.create([...projects])
+        .then(projectInstances =>
+          createUser({ projects: [...projectInstances] })
+        )
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance =>
+          ApplicationUser.upsert({
+            ...userInstance.toObject(),
+            projects: removeWithName(
+              userInstance.toObject().projects,
+              "project 1"
+            )
+          })
+        )
+        .then(userInstance =>
+          Promise.all([retrieveUser(userInstance.id), Project.find()])
+        )
+        .then(([userInstance, projectInstances]) => {
+          expect(getsNames(userInstance.projects())).to.deep.equalInAnyOrder([
+            {
+              name: "project 2"
+            }
+          ]);
+          expect(projectInstances.length).to.equal(2);
+        }));
+  });
+
+  describe("given a hasAndBelongsToMany relation type", () => {
+    it("should create the relatedObjects if they do not exist in the database and save the relations", () =>
+      createUser({ tickets: [...tickets] })
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance => {
+          expect(getsNames(userInstance.tickets())).to.deep.equalInAnyOrder(
+            tickets
+          );
+        }));
+
+    it("should be saved if the related objects do exist in the database", () =>
+      Ticket.create([...tickets])
+        .then(ticketInstances => createUser({ tickets: [...ticketInstances] }))
+        .then(userInstance =>
+          Promise.all([retrieveUser(userInstance.id), Ticket.find()])
+        )
+        .then(([userInstance, ticketInstances]) => {
+          expect(getsNames(userInstance.tickets())).to.deep.equalInAnyOrder(
+            tickets
+          );
+          expect(ticketInstances.length).to.equal(2);
+        }));
+
+    it("should be deletable", () =>
+      Ticket.create([...tickets])
+        .then(ticketInstances => createUser({ tickets: [...ticketInstances] }))
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance =>
+          ApplicationUser.upsert({
+            ...userInstance.toObject(),
+            tickets: removeWithName(userInstance.toObject().tickets, "ticket 1")
+          })
+        )
+        .then(userInstance =>
+          Promise.all([retrieveUser(userInstance.id), Ticket.find()])
+        )
+        .then(([userInstance, ticketInstances]) => {
+          expect(getsNames(userInstance.tickets())).to.deep.equalInAnyOrder([
+            {
+              name: "ticket 2"
+            }
+          ]);
+          expect(ticketInstances.length).to.equal(2);
+        }));
   });
 
   function resetDB() {
@@ -196,24 +239,22 @@ describe("the loopback saveRelation mixin", function(tap) {
     });
   }
 
-  function createUser({ profile, orders, projects }) {
+  function createUser(props) {
     return ApplicationUser.create({
       email: "user1@gmail.com",
       password: "123456",
-      profile,
-      orders,
-      projects
+      ...props
     });
   }
 
   function retrieveUser(id) {
     return ApplicationUser.findById(id, {
-      include: ["profile", "orders", "projects"]
+      include: ["profile", "orders", "projects", "tickets"]
     });
   }
 
-  function getOrdersNames(orders) {
-    return orders.map(order => ({ name: order.name }));
+  function getsNames(items) {
+    return items.map(item => ({ name: item.name }));
   }
 
   function getOrdersWithDifferentNames(orders, name) {
@@ -223,7 +264,7 @@ describe("the loopback saveRelation mixin", function(tap) {
     }));
   }
 
-  function removeOrderWithName(orders, name) {
-    return orders.filter(order => order.name !== name);
+  function removeWithName(items, name) {
+    return items.filter(item => item.name !== name);
   }
 });

@@ -88,7 +88,7 @@ module.exports = (Model, options) => {
     relationName,
     relatedObjects
   }) {
-    return Promise.map([...relatedObjects], relatedObject =>
+    return Promise.map(relatedObjects, relatedObject =>
       typeof modelThrough !== "undefined"
         ? relatedObject.id
           ? instance[relationName].add(relatedObject.id)
@@ -99,6 +99,7 @@ module.exports = (Model, options) => {
 
   function removeRelatedObjects({
     modelTo,
+    modelThrough,
     instance,
     relationName,
     relatedObjects
@@ -113,7 +114,11 @@ module.exports = (Model, options) => {
         )
       )
       .then(removedRelatedInstances =>
-        Promise.map(removedRelatedInstances, ({ id }) => modelTo.deleteById(id))
+        Promise.map(removedRelatedInstances, ({ id }) =>
+          typeof modelThrough !== "undefined"
+            ? instance[relationName].remove(id)
+            : modelTo.deleteById(id)
+        )
       );
   }
 

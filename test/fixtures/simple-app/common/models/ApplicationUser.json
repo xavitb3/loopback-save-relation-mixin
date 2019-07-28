@@ -6,7 +6,9 @@
     "validateUpsert": false
   },
   "mixins": {
-    "SaveRelation": { "relations": ["profile", "orders", "projects"] }
+    "SaveRelation": {
+      "relations": ["profile", "orders", "projects", "tickets"]
+    }
   },
   "relations": {
     "profile": {
@@ -24,6 +26,10 @@
       "model": "Project",
       "foreignKey": "userId",
       "through": "UserProject"
+    },
+    "tickets": {
+      "type": "hasAndBelongsToMany",
+      "model": "Ticket"
     }
   }
 }

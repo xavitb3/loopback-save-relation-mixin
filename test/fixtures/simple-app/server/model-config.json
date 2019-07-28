@@ -41,5 +41,9 @@
   "UserProject": {
     "dataSource": "db",
     "public": false
+  },
+  "Ticket": {
+    "dataSource": "db",
+    "public": false
   }
 }
