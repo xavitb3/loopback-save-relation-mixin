@@ -1,0 +1,61 @@
+{
+  "name": "loopback-ds-timestamp-mixin",
+  "version": "3.4.1",
+  "description": "A mixin to automatically generate created and updated Date attributes for loopback Models",
+  "main": "index.js",
+  "scripts": {
+    "preversion": "npm test",
+    "pretest": "gulp babel",
+    "test": "mocha ./test/*.js",
+    "watch": "gulp",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "outdated": "npm outdated --depth=0"
+  },
+  "keywords": [
+    "loopback",
+    "strongloop",
+    "mixin",
+    "timestamp"
+  ],
+  "author": "Bryan Clark",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clarkbw/loopback-ds-timestamp-mixin.git"
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ],
+    "plugins": [
+      "transform-object-assign",
+      "transform-es2015-modules-commonjs"
+    ]
+  },
+  "dependencies": {
+    "debug": "^2.6.1",
+    "loopback-connector-mysql": "^5.4.2",
+    "loopback-connector-sqlite3": "^3.0.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.23.1",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.23.0",
+    "babel-plugin-transform-object-assign": "^6.22.0",
+    "babel-preset-es2015": "^6.22.0",
+    "chai": "^4.2.0",
+    "coveralls": "^2.11.16",
+    "deep-equal-in-any-order": "^1.0.16",
+    "eslint": "^3.16.1",
+    "eslint-config-airbnb-base": "^11.0.0",
+    "eslint-plugin-import": "^2.0.1",
+    "gulp": "3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-sourcemaps": "^2.4.1",
+    "loopback": "=3.4.0",
+    "loopback-boot": "=2.23.0",
+    "loopback-datasource-juggler": "=3.1.1",
+    "mocha": "^6.2.0",
+    "nyc": "^10.1.2",
+    "tap": "^10.2.1"
+  }
+}

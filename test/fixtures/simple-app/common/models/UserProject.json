@@ -1,0 +1,23 @@
+{
+  "name": "UserProject",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": false
+  },
+  "properties": {
+    "joinedAt": { "type": "date", "default": "$now" }
+  },
+  "relations": {
+    "user": {
+      "type": "belongsTo",
+      "model": "ApplicationUser",
+      "foreignKey": "userId"
+    },
+    "project": {
+      "type": "belongsTo",
+      "model": "Project",
+      "foreignKey": "projectId"
+    }
+  }
+}

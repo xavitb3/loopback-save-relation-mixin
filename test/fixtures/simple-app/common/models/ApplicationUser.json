@@ -1,0 +1,29 @@
+{
+  "name": "ApplicationUser",
+  "base": "User",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": false
+  },
+  "mixins": {
+    "SaveRelation": { "relations": ["profile", "orders", "projects"] }
+  },
+  "relations": {
+    "profile": {
+      "type": "hasOne",
+      "model": "Profile",
+      "foreignKey": "userId"
+    },
+    "orders": {
+      "type": "hasMany",
+      "model": "Order",
+      "foreignKey": "userId"
+    },
+    "projects": {
+      "type": "hasMany",
+      "model": "Project",
+      "foreignKey": "userId",
+      "through": "UserProject"
+    }
+  }
+}
