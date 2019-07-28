@@ -4,7 +4,7 @@
   "description": "A mixin to automatically save related Models",
   "main": "index.js",
   "scripts": {
-    "test": "mocha ./test/*.js"
+    "test": "mocha ./test/*.js --no-timeouts --exit"
   },
   "keywords": [
     "loopback",
