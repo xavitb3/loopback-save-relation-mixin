@@ -78,22 +78,25 @@ And finally you can configure your model so it enables saving a related model.
 It works for: 
 
 ```
-the loopback saveRelation mixin
-   ✓ given a hasOne relation type
-      ✓ should be saved (131ms)
-      ✓ should be updated (99ms)
-      ✓ should be deletable (99ms)
+  the loopback saveRelation mixin
+    given a hasOne relation type
+      ✓ should be saved
+      ✓ should be updated
+      ✓ should be deletable by sending an empty object
+      ✓ should be deletable by sending null
     given a hasMany relation type
-      ✓ should be saved (94ms)
-      ✓ should be updated (109ms)
-      ✓ should be deletable (108ms)
-      ✓ should be updatable and deletable in the same operation (109ms)
+      ✓ should be saved
+      ✓ should be updated
+      ✓ should able to remove one relatedObject
+      ✓ should able to remove all the relatedObjects by sending null
+      ✓ should able to remove all the relatedObjects by sending an empty array
+      ✓ should be updatable and deletable in the same operation
     given a hasManyThrough relation type
-      ✓ should create the relatedObjects if they do not exist in the database and save the relations (98ms)
-      ✓ should be saved if the related objects do exist in the database (102ms)
-      ✓ should be deletable (115ms)
+      ✓ should create the relatedObjects if they do not exist in the database and save the relations
+      ✓ should be saved if the related objects do exist in the database
+      ✓ should be deletable
     given a hasAndBelongsToMany relation type
-      ✓ should create the relatedObjects if they do not exist in the database and save the relations (93ms)
-      ✓ should be saved if the related objects do exist in the database (104ms)
-      ✓ should be deletable (125ms)
+      ✓ should create the relatedObjects if they do not exist in the database and save the relations
+      ✓ should be saved if the related objects do exist in the database
+      ✓ should be deletable
 ```

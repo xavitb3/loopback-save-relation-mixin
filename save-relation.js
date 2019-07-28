@@ -64,7 +64,7 @@ module.exports = (Model, options) => {
       : modelTo
           .findOne({ where: { [keyTo]: instance.id } })
           .then(currentRelatedInstance =>
-            objectIsEmpty(relatedObject)
+            relatedObject === null || objectIsEmpty(relatedObject)
               ? modelTo.destroyById(currentRelatedInstance.id)
               : modelTo.upsert({
                   ...currentRelatedInstance.toObject(),
@@ -88,13 +88,15 @@ module.exports = (Model, options) => {
     relationName,
     relatedObjects
   }) {
-    return Promise.map(relatedObjects, relatedObject =>
-      typeof modelThrough !== "undefined"
-        ? relatedObject.id
-          ? instance[relationName].add(relatedObject.id)
-          : instance[relationName].create(relatedObject)
-        : modelTo.upsert({ ...relatedObject, [keyTo]: instance.id })
-    );
+    return relatedObjects
+      ? Promise.map(relatedObjects, relatedObject =>
+          typeof modelThrough !== "undefined"
+            ? relatedObject.id
+              ? instance[relationName].add(relatedObject.id)
+              : instance[relationName].create(relatedObject)
+            : modelTo.upsert({ ...relatedObject, [keyTo]: instance.id })
+        )
+      : Promise.resolve();
   }
 
   function removeRelatedObjects({
@@ -106,11 +108,12 @@ module.exports = (Model, options) => {
   }) {
     return Model.findById(instance.id, { include: relationName })
       .then(currentInstance =>
-        currentInstance[relationName]().filter(
-          currentRelatedInstance =>
-            !relatedObjects.some(
-              relatedObject => relatedObject.id === currentRelatedInstance.id
-            )
+        currentInstance[relationName]().filter(currentRelatedInstance =>
+          relatedObjects === null
+            ? currentRelatedInstance
+            : !relatedObjects.some(
+                relatedObject => relatedObject.id === currentRelatedInstance.id
+              )
         )
       )
       .then(removedRelatedInstances =>

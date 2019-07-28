@@ -39,12 +39,17 @@ describe("the loopback saveRelation mixin", () => {
           expect(profileInstances.length).to.equal(1);
         }));
 
-    it("should be deletable", () =>
-      createUser({ profile })
+    it("should be deletable by sending an empty object", () =>
+      deleteHasOne({}));
+
+    it("should be deletable by sending null", () => deleteHasOne(null));
+
+    function deleteHasOne(nextProfile) {
+      return createUser({ profile })
         .then(userInstance =>
           ApplicationUser.upsert({
             ...userInstance.toObject(),
-            profile: {}
+            profile: nextProfile
           })
         )
         .then(userInstance =>
@@ -53,7 +58,8 @@ describe("the loopback saveRelation mixin", () => {
         .then(([userInstance, profileInstances]) => {
           expect(userInstance.profile()).to.be.null;
           expect(profileInstances.length).to.equal(0);
-        }));
+        });
+    }
   });
 
   describe("given a hasMany relation type", () => {
@@ -89,24 +95,25 @@ describe("the loopback saveRelation mixin", () => {
             })
         ));
 
-    it("should be deletable", () =>
-      createUser({ orders })
-        .then(userInstance => retrieveUser(userInstance.id))
-        .then(userInstance =>
-          ApplicationUser.upsert({
-            ...userInstance.toObject(),
-            orders: removeWithName(userInstance.toObject().orders, "order 1")
-          })
-            .then(userInstance =>
-              Promise.all([retrieveUser(userInstance.id), Order.find()])
-            )
-            .then(([userInstance, orderInstances]) => {
-              expect(getsNames(userInstance.orders())).to.deep.equalInAnyOrder([
-                { name: "order 2" }
-              ]);
-              expect(orderInstances.length).to.equal(1);
-            })
-        ));
+    it("should able to remove one relatedObject", () =>
+      deleteHasMany().then(([userInstance, orderInstances]) => {
+        expect(getsNames(userInstance.orders())).to.deep.equalInAnyOrder([
+          { name: "order 2" }
+        ]);
+        expect(orderInstances.length).to.equal(1);
+      }));
+
+    it("should able to remove all the relatedObjects by sending null", () =>
+      deleteHasMany(null).then(([userInstance, orderInstances]) => {
+        expect(userInstance.orders().length).to.equal(0);
+        expect(orderInstances.length).to.equal(0);
+      }));
+
+    it("should able to remove all the relatedObjects by sending an empty array", () =>
+      deleteHasMany([]).then(([userInstance, orderInstances]) => {
+        expect(userInstance.orders().length).to.equal(0);
+        expect(orderInstances.length).to.equal(0);
+      }));
 
     it("should be updatable and deletable in the same operation", () =>
       createUser({ orders })
@@ -129,6 +136,22 @@ describe("the loopback saveRelation mixin", () => {
               expect(orderInstances.length).to.equal(1);
             })
         ));
+
+    function deleteHasMany(nextValue) {
+      return createUser({ orders })
+        .then(userInstance => retrieveUser(userInstance.id))
+        .then(userInstance =>
+          ApplicationUser.upsert({
+            ...userInstance.toObject(),
+            orders:
+              typeof nextValue !== "undefined"
+                ? nextValue
+                : removeWithName(userInstance.toObject().orders, "order 1")
+          }).then(userInstance =>
+            Promise.all([retrieveUser(userInstance.id), Order.find()])
+          )
+        );
+    }
   });
 
   describe("given a hasManyThrough relation type", () => {
