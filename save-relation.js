@@ -21,14 +21,14 @@ module.exports = (Model, options) => {
 
   Model.observe(
     "after save",
-    ({ instance, options: { relations }, isNewInstance }) => {
+    ({ instance, options: { relations, ...options }, isNewInstance }) => {
       return Promise.map(relations, relation =>
-        updateRelatedModels({ instance, relation, isNewInstance })
+        updateRelatedModels({ instance, relation, isNewInstance, options })
       );
     }
   );
 
-  function updateRelatedModels({ instance, relation, isNewInstance }) {
+  function updateRelatedModels({ instance, relation, isNewInstance, options }) {
     const { modelTo, keyTo, type, modelThrough } = Model.relations[
       relation.name
     ];
@@ -40,7 +40,8 @@ module.exports = (Model, options) => {
           keyTo,
           isNewInstance,
           instance,
-          relatedObject: relation.values
+          relatedObject: relation.values,
+          options
         });
       case "hasMany":
         return hasMany({
@@ -50,27 +51,41 @@ module.exports = (Model, options) => {
           isNewInstance,
           instance,
           relationName: relation.name,
-          relatedObjects: relation.values
+          relatedObjects: relation.values,
+          options
         });
     }
   }
 
-  function hasOne({ modelTo, keyTo, isNewInstance, instance, relatedObject }) {
+  function hasOne({
+    modelTo,
+    keyTo,
+    isNewInstance,
+    instance,
+    relatedObject,
+    options
+  }) {
     return isNewInstance
-      ? modelTo.upsert({
-          ...relatedObject,
-          [keyTo]: instance.id
-        })
+      ? modelTo.upsert(
+          {
+            ...relatedObject,
+            [keyTo]: instance.id
+          },
+          options
+        )
       : modelTo
           .findOne({ where: { [keyTo]: instance.id } })
           .then(currentRelatedInstance =>
             relatedObject === null || objectIsEmpty(relatedObject)
               ? modelTo.destroyById(currentRelatedInstance.id)
-              : modelTo.upsert({
-                  ...currentRelatedInstance.toObject(),
-                  ...relatedObject,
-                  [keyTo]: instance.id
-                })
+              : modelTo.upsert(
+                  {
+                    ...currentRelatedInstance.toObject(),
+                    ...relatedObject,
+                    [keyTo]: instance.id
+                  },
+                  options
+                )
           );
   }
 
@@ -86,15 +101,19 @@ module.exports = (Model, options) => {
     keyTo,
     instance,
     relationName,
-    relatedObjects
+    relatedObjects,
+    options
   }) {
     return relatedObjects
       ? Promise.map(relatedObjects, relatedObject =>
           typeof modelThrough !== "undefined"
             ? relatedObject.id
               ? instance[relationName].add(relatedObject.id)
-              : instance[relationName].create(relatedObject)
-            : modelTo.upsert({ ...relatedObject, [keyTo]: instance.id })
+              : instance[relationName].create(relatedObject, options)
+            : modelTo.upsert(
+                { ...relatedObject, [keyTo]: instance.id },
+                options
+              )
         )
       : Promise.resolve();
   }
