@@ -125,7 +125,11 @@ module.exports = (Model, options) => {
     relationName,
     relatedObjects
   }) {
-    return Model.findById(instance.id, { include: relationName })
+    return Model.findById(
+      instance.id,
+      { include: relationName },
+      { isFromNodeJS: true }
+    )
       .then(currentInstance =>
         currentInstance[relationName]().filter(currentRelatedInstance =>
           relatedObjects === null
